@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    .list-group-item {
+        transition:
+            background-color 0.5s ease,
+            color 0.5s ease,
+            box-shadow 0.3s ease;
+        cursor: pointer;
+    }
+
+    /* Fundo + cor do texto para completed e not completed */
+    .todo-completed {
+        background-color: rgba(25, 135, 84, 0.448);
+        color: #155724;
+        /* verde escuro */
+        box-shadow: 0 0 10px rgba(25, 135, 84, 0.3);
+    }
+
+    .todo-not-completed {
+        background-color: rgba(220, 53, 70, 0.291);
+        color: #721c24;
+        /* vermelho escuro */
+        box-shadow: 0 0 10px rgba(220, 53, 70, 0.3);
+    }
+
+    /* Hover em todas as linhas */
+    .list-group-item:hover {
+        box-shadow: 0 4px 12px rgba(195, 189, 189, 0.028);
+        color: #000;
+        /* texto fica preto no hover */
+    }
+
+    /* Animação suave personalizada para o modal */
+    .modal.fade .modal-dialog {
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+        opacity: 1;
+    }
+</style>
+
+<!-- Mensagens de feedback (alertas Bootstrap) -->
+{% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<h1 class="mb-4">Lista de Tarefas</h1>
+
+<ul class="list-group todo_table">
+    <!-- Loop for: Percorre a lista todos enviada pela view. -->
+    <!-- lista com classes usando bootstrap e condição: cada item tem classes para layout, alinhando itens horizontalmente com espaçamento. 
+    também aplica todo-completed ou todo-not-completed para colorir a linha conforme o status da tarefa (isCompleted). -->
+
+    {% for todo in todos %}
+    <li class="list-group-item d-flex justify-content-between align-items-center 
+        {% if todo.isCompleted %}todo-completed{% else %}todo-not-completed{% endif %}">
+
+        <!-- formulário POST para atualizar o status da tarefa
+action envia para a URL atualizar_tarefa com o id da tarefa
+{% csrf_token %} protege contra ataques CSRF, é uma boa prática.
+checkbox: O campo checked é marcado, se todo.isCompleted for verdadeiro.
+onchange="this.form.submit()": quando o checkbox é clicado, o formulário é enviado para atualizar a tarefa.
+título: mostra o texto da tarefa em negrito. -->
+        <div class="d-flex align-items-center">
+            <form method="POST" action="{% url 'atualizar_tarefa' todo.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input class="form-check-input me-2" type="checkbox" name="completed" onchange="this.form.submit()" 
+                {% if todo.isCompleted %}checked{% endif %}>
+                <strong>{{ todo.title }}</strong>
+            </form>
+        </div>
+
+        <!-- exibe um detalhe verde ou vermelho dependendo do status.
+gap-2 adiciona espaço entre os itens do grupo como status e botões. -->
+        <div class="d-flex align-items-center gap-2">
+            {% if todo.isCompleted %}
+            <span class="badge bg-success">Completed</span>
+            {% else %}
+            <span class="badge bg-danger">Not Completed</span>
+            {% endif %}
+
+            <!-- botão do Bootstrap padrão.
+atributos data-bs-toggle e data-bs-target: ativam o modal com id editarModal do Bootstrap.
+outros atributos data-*: passam dados da tarefa (id, título e status) para o modal, para o js usar e preencher o formulário de edição.
+{{ todo.isCompleted|yesno:'true,false' }} converte o booleano em string "true" ou "false" para js entender. -->
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarModal"
+                data-id="{{ todo.id }}" data-title="{{ todo.title }}"
+                data-completed="{{ todo.isCompleted|yesno:'true,false' }}">
+                Editar
+            </button>
+
+            <!-- link para deletar tarefa com botão.
+onclick abre uma confirmação antes de deletar. -->
+            <a href="{% url 'deletar_tarefa' todo.id %}" class="btn btn-sm btn-danger"
+                onclick="return confirm('Tem certeza que deseja excluir?');">Excluir</a>
+        </div>
+
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- estrutura padrão do modal do Bootstrap
+modal = caixa de dialogo que impede interação com o restante da página.
+modal escondido (fade).
+tem um formulário para editar a tarefa, com método POST.
+campos:
+hidden para guardar o id da tarefa sendo não editável.
+input texto para o título.
+checkbox para marcar a tarefa como completa.
+Botões para cancelar e salvar. -->
+<div class="modal fade" id="editarModal" tabindex="-1" aria-labelledby="editarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" id="editarForm">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editarModalLabel">Editar Tarefa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="todoId" name="todoId" value="">
+                    <div class="mb-3">
+                        <label for="todoTitle" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="todoTitle" name="title" required>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="todoCompleted" name="isCompleted">
+                        <label class="form-check-label" for="todoCompleted">Completa</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- evento show.bs.modal: usado quando o modal abrindo.
+event.relatedTarget: botão que abre o modal.
+pega atributos do botão (id, title, isCompleted).
+preenche os campos do formulário com esses dados.
+muda a url de envio do formulário para o id correto da tarefa. -->
+
+<script>
+    var editarModal = document.getElementById('editarModal');
+    editarModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var id = button.getAttribute('data-id');
+        var title = button.getAttribute('data-title');
+        var completed = button.getAttribute('data-completed') === 'true';
+
+        var modalTitle = editarModal.querySelector('#todoTitle');
+        var modalCompleted = editarModal.querySelector('#todoCompleted');
+        var modalId = editarModal.querySelector('#todoId');
+
+        modalTitle.value = title;
+        modalCompleted.checked = completed;
+        modalId.value = id;
+
+        var form = editarModal.querySelector('#editarForm');
+        form.action = '/editar/' + id + '/';
+    });
+
+    // Desabilita botão Salvar após o envio para evitar múltiplos cliques
+    var editarForm = document.getElementById('editarForm');
+    editarForm.addEventListener('submit', function() {
+        var btnSalvar = editarForm.querySelector('button[type="submit"]');
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'Salvando...';
+    });
+</script>
+
+{% endblock %}
