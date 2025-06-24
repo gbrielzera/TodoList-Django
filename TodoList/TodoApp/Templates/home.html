@@ -11,7 +11,6 @@
         cursor: pointer;
     }
 
-    /* Fundo + cor do texto para completed e not completed */
     .todo-completed {
         background-color: rgba(25, 135, 84, 0.448);
         color: #155724;
@@ -22,18 +21,14 @@
     .todo-not-completed {
         background-color: rgba(220, 53, 70, 0.291);
         color: #721c24;
-        /* vermelho escuro */
         box-shadow: 0 0 10px rgba(220, 53, 70, 0.3);
     }
 
-    /* Hover em todas as linhas */
     .list-group-item:hover {
         box-shadow: 0 4px 12px rgba(195, 189, 189, 0.028);
         color: #000;
-        /* texto fica preto no hover */
     }
 
-    /* Animação suave personalizada para o modal */
     .modal.fade .modal-dialog {
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
         transform: translateY(-50px);
@@ -46,7 +41,7 @@
     }
 </style>
 
-<!-- Mensagens de feedback (alertas Bootstrap) -->
+<!-- mensagens de feedback do Bootstrap -->
 {% if messages %}
   <div class="container mt-3">
     {% for message in messages %}
@@ -58,49 +53,50 @@
   </div>
 {% endif %}
 
-<h1 class="mb-4">Lista de Tarefas</h1>
+<h1 class="mb-4 m-lg-4">Lista de Tarefas</h1>
 
-<ul class="list-group todo_table">
-    <!-- Loop for: Percorre a lista todos enviada pela view. -->
-    <!-- lista com classes usando bootstrap e condição: cada item tem classes para layout, alinhando itens horizontalmente com espaçamento. 
-    também aplica todo-completed ou todo-not-completed para colorir a linha conforme o status da tarefa (isCompleted). -->
-
-    {% for todo in todos %}
-    <li class="list-group-item d-flex justify-content-between align-items-center 
-        {% if todo.isCompleted %}todo-completed{% else %}todo-not-completed{% endif %}">
-
-        <!-- formulário POST para atualizar o status da tarefa
-action envia para a URL atualizar_tarefa com o id da tarefa
-{% csrf_token %} protege contra ataques CSRF, é uma boa prática.
-checkbox: O campo checked é marcado, se todo.isCompleted for verdadeiro.
-onchange="this.form.submit()": quando o checkbox é clicado, o formulário é enviado para atualizar a tarefa.
-título: mostra o texto da tarefa em negrito. -->
-        <div class="d-flex align-items-center">
-            <form method="POST" action="{% url 'atualizar_tarefa' todo.id %}" style="display:inline;">
-                {% csrf_token %}
-                <input class="form-check-input me-2" type="checkbox" name="completed" onchange="this.form.submit()" 
-                {% if todo.isCompleted %}checked{% endif %}>
-                <strong>{{ todo.title }}</strong>
-            </form>
-        </div>
-
-        <!-- exibe um detalhe verde ou vermelho dependendo do status.
-gap-2 adiciona espaço entre os itens do grupo como status e botões. -->
-        <div class="d-flex align-items-center gap-2">
-            {% if todo.isCompleted %}
-            <span class="badge bg-success">Completed</span>
-            {% else %}
-            <span class="badge bg-danger">Not Completed</span>
-            {% endif %}
-
-            <!-- botão do Bootstrap padrão.
-atributos data-bs-toggle e data-bs-target: ativam o modal com id editarModal do Bootstrap.
-outros atributos data-*: passam dados da tarefa (id, título e status) para o modal, para o js usar e preencher o formulário de edição.
-{{ todo.isCompleted|yesno:'true,false' }} converte o booleano em string "true" ou "false" para js entender. -->
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarModal"
-                data-id="{{ todo.id }}" data-title="{{ todo.title }}"
-                data-completed="{{ todo.isCompleted|yesno:'true,false' }}">
-                Editar
+<div class="container mt-5" style="max-width: 1280px;">
+    <ul class="list-group">
+        <!-- Loop for: Percorre a lista todos enviada pela view. -->
+        <!-- lista com classes usando bootstrap e condição: cada item tem classes para layout, alinhando itens horizontalmente com espaçamento. 
+            também aplica todo-completed ou todo-not-completed para colorir a linha conforme o status da tarefa (isCompleted). -->
+            
+            {% for todo in todos %}
+            <li class="list-group-item d-flex justify-content-between align-items-center 
+            {% if todo.isCompleted %}todo-completed{% else %}todo-not-completed{% endif %}">
+            
+            <!-- formulário POST para atualizar o status da tarefa
+                action envia para a URL atualizar_tarefa com o id da tarefa
+                {% csrf_token %} protege contra ataques CSRF, é uma boa prática.
+                checkbox: O campo checked é marcado, se todo.isCompleted for verdadeiro.
+                onchange="this.form.submit()": quando o checkbox é clicado, o formulário é enviado para atualizar a tarefa.
+                título: mostra o texto da tarefa em negrito. -->
+                <div class="d-flex align-items-center">
+                    <form method="POST" action="{% url 'atualizar_tarefa' todo.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input class="form-check-input me-2" type="checkbox" name="completed" onchange="this.form.submit()" 
+                        {% if todo.isCompleted %}checked{% endif %}>
+                        <strong>{{ todo.title }}</strong>
+                    </form>
+                </div>
+                
+                <!-- exibe um detalhe verde ou vermelho dependendo do status.
+                    gap-2 adiciona espaço entre os itens do grupo como status e botões. -->
+                    <div class="d-flex align-items-center gap-2">
+                        {% if todo.isCompleted %}
+                        <span class="badge bg-success">Completed</span>
+                        {% else %}
+                        <span class="badge bg-danger">Not Completed</span>
+                        {% endif %}
+                        
+                        <!-- botão do Bootstrap padrão.
+                            atributos data-bs-toggle e data-bs-target: ativam o modal com id editarModal do Bootstrap.
+                            outros atributos data-*: passam dados da tarefa (id, título e status) para o modal, para o js usar e preencher o formulário de edição.
+                            {{ todo.isCompleted|yesno:'true,false' }} converte o booleano em string "true" ou "false" para js entender. -->
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarModal"
+                            data-id="{{ todo.id }}" data-title="{{ todo.title }}"
+                            data-completed="{{ todo.isCompleted|yesno:'true,false' }}">
+                            Editar
             </button>
 
             <!-- link para deletar tarefa com botão.
@@ -112,6 +108,7 @@ onclick abre uma confirmação antes de deletar. -->
     </li>
     {% endfor %}
 </ul>
+</div>
 
 <!-- estrutura padrão do modal do Bootstrap
 modal = caixa de dialogo que impede interação com o restante da página.
@@ -177,7 +174,7 @@ muda a url de envio do formulário para o id correto da tarefa. -->
         form.action = '/editar/' + id + '/';
     });
 
-    // Desabilita botão Salvar após o envio para evitar múltiplos cliques
+    // desabilita botão de salvar para evitar múltiplos cliques
     var editarForm = document.getElementById('editarForm');
     editarForm.addEventListener('submit', function() {
         var btnSalvar = editarForm.querySelector('button[type="submit"]');
